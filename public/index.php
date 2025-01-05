@@ -4,11 +4,28 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Recherche CASFM</title>
+        <link rel="icon" type="image/x-icon" href="favicon.ico">
         <script src="casfm.js?v=1"></script>
         <script src="sections.js?v=1"></script>
         <script src="https://cdn.jsdelivr.net/npm/minisearch@7.1.1/dist/umd/index.min.js"></script>
         <script src="//unpkg.com/alpinejs" defer></script>
         <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="manifest" href="manifest.json">
+            <!--
+            <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('sw.js')
+                        .then(registration => {
+                            console.log('Service Worker registered');
+                        })
+                        .catch(err => {
+                            console.log('Service Worker registration failed:', err);
+                        });
+                });
+            }
+        </script>
+        -->
         <script>
             function highlightKeywords(keywords, text, snippetLength = 300) {
                 let lowerText = text.toLowerCase();
@@ -50,7 +67,10 @@
                     storeFields: ['chapter', 'page', 'content', 'id', 'subchapter'],
                     searchOptions: {
                         boost: {
-                            subchapter: 2
+                            subchapter: 2,
+                            chapter : 2,
+                            subsection: 2,
+                            content: 1
                         },
                         fuzzy: 0.3,
                         prefix: true
@@ -61,17 +81,56 @@
     </head>
     <body class="bg-slate-50">
         <div x-data="{
-                    searchTerm: '',
+                    searchTerm: new URLSearchParams(window.location.search).get('q') || '',
                     pages: casfm_pages,
                     chapters: casfm_chapters,
                     results :[],
                     search() {
-                    this.results = minisearch.search(this.searchTerm);
+                        this.results = minisearch.search(this.searchTerm);
+                        const url = new URL(window.location);
+                        if (this.searchTerm) {
+                            url.searchParams.set('q', this.searchTerm);
+                        } else {
+                            url.searchParams.delete('q');
+                        }
+                        window.history.replaceState({}, '', url);
                     }
-				}" class="container mx-auto px-4 py-8">
+                }" x-init="search()" class="container mx-auto px-4 py-8">
+                    <!--
+                    <div x-data="{showInstall: false, deferredPrompt: null}"
+                        x-init="
+                            window.addEventListener('beforeinstallprompt', (e) => {
+                                e.preventDefault();
+                                deferredPrompt = e;
+                                showInstall = true;
+                            });
+                            window.addEventListener('appinstalled', () => {
+                                showInstall = false;
+                                deferredPrompt = null;
+                            });"
+                        class="max-w-4xl mx-auto mb-4">
+                        <button
+                            x-show="showInstall"
+                            @click="
+                                if (deferredPrompt) {
+                                    deferredPrompt.prompt();
+                                    deferredPrompt.userChoice.then((choiceResult) => {
+                                        if (choiceResult.outcome === 'accepted') {
+                                            showInstall = false;
+                                            deferredPrompt = null;
+                                        }
+                                    });
+                                }
+                            "
+                            class="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition duration-200 font-serif">
+                            Appuyez pour installer et avoir un accès hors ligne
+                        </button>
+                    </div>
+                    -->
             <div class="max-w-4xl mx-auto">
-                <h1 class="text-4xl font-serif text-indigo-900 mb-8">Recherche CASFM</h1>
-                <p class="text-gray-700 mb-8 font-serif">Cherchez simplement dans les recommandations CASFM comme vous le feriez sur Google. Tapez un mot ou une phrase pour trouver rapidement les informations microbiologiques dont vous avez besoin.</p>
+                <a href="https://iheb.tn"><p class="underline text-center font-serif text-indigo-900 mb-2">iheb.tn</p></a>
+                <h1 class="text-4xl text-center font-serif text-indigo-900 mb-8">Recherche CA-SFM</h1>
+                <p class="text-gray-700 mb-8 font-serif">Cherchez simplement dans les recommandations <b>CA-SFM de l'EUCAST version juin 2024 v1.0</b> comme vous le feriez sur Google. Tapez un mot ou une phrase pour trouver rapidement les informations microbiologiques dont vous avez besoin.</p>
                 <div class="mb-6">
                     <input type="text" x-model="searchTerm" @input="search" placeholder="Rechercher dans le document..." class="w-full px-4 py-2 rounded border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-serif">
                 </div>
@@ -138,9 +197,9 @@
         <footer class="bg-indigo-50 mt-16 py-8">
             <div class="container mx-auto px-4 max-w-4xl">
                 <div class="text-center text-sm text-gray-600 space-y-2">
-                    <p>&copy; 2024 Iheb Chagra. Tous droits réservés.</p>
-                        <p>Licence <a href="https://www.gnu.org/licenses/gpl-3.0.fr.html" class="text-indigo-600 hover:text-indigo-800">GNU General Public License v3.0</a></p>
-                            <p>Ce site est Open-Source sur <a href="https://github.com/ihebchagra/recherche-casfm" class="text-indigo-600 hover:text-indigo-800">Github</a></p>
+                    <p x-data="{year : new Date().getFullYear()}">&copy; <span x-text="year"></span> Iheb Chagra. Tous droits réservés.</p>
+                        <p>GNU General Public License v3.0</p>
+                            <p>Ce site est Open-Source sur <a href="https://github.com/ihebchagra/casfm-search" class="text-indigo-600 hover:text-indigo-800">Github</a></p>
                             <p>Contact: <a href="mailto:ihebchagra@gmail.com" class="text-indigo-600 hover:text-indigo-800">ihebchagra@gmail.com</a></p>
                             <p>Médecin Résident en Microbiologie, Hôpitaux de Tunisie</p>
                 </div>
